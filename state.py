@@ -32,6 +32,11 @@ _sf_init = """.###............................
 ................................"""
 
 
+
+TERMINALS = {'MOVE', 'LEFT', 'RIGHT'}
+NONTERMINALS = {'IF_SENSE', 'PROG2', 'PROG3'}
+NONTERMINAL_ARGS = {'IF_SENSE':2, 'PROG2':2, 'PROG3':3}
+
 class State:
     def __init__(self) -> None:
         self._board = [[c == '#' for c in line] for line in _sf_init.split('\n')]
@@ -43,6 +48,14 @@ class State:
         self._dir_str = ['v', '>', '^', '<']
         self.collected = 0
         self.steps = 0
+
+    def take_action(self, action: str):
+        fns = {
+            'MOVE': self.action_move,
+            'LEFT': self.action_left,
+            'RIGHT': self.action_right,
+        }
+        fns[action]()
 
     def action_move(self):
         self.steps += 1
@@ -96,6 +109,58 @@ class State:
 
         return board
 
+
+def smartsplit(s):
+    output = []
+    start = 0
+    count = 0
+    for i, c in enumerate(s):
+        assert(count >= 0)
+        if c == '(':
+            count += 1
+        elif c == ')':
+            count -= 1
+        elif c == ' ' and count == 0 and start < i - 1:
+            output.append(s[start:i])
+            start = i + 1
+    assert(count == 0)
+    if count == 0 and start < len(s):
+        output.append(s[start:])
+    return output
+
+def smartstrip(s):
+    if s.startswith('(') and s.endswith(')'):
+        return s[1:-1]
+    else:
+        return s
+
+class Node:
+    def __init__(self, s = None) -> None:
+        if s is not None:
+            pass # Recursively init program
+            self.cmd, *self.children = smartsplit(smartstrip(s))
+            self.children = [Node(c) for c in self.children]
+        else:
+            self.cmd = None
+            self.children = []
+
+    def __repr__(self) -> str:
+        return f"Node(cmd='{self.cmd}', {len(self.children)} children)"
+
+    def _to_string(self) -> str:
+        """
+        Returns lisp-like string to represent the program
+        """
+        if self.children:
+            return '(' + self.cmd + ' ' + ' '.join((c._to_string() for c in self.children)) + ')'
+        else:
+            return self.cmd
+
+    def to_string(self) -> str:
+        if self.children:
+            return self._to_string()
+        else:
+            return '(' + self._to_string() + ')'
 
 
 if __name__ == "__main__":
