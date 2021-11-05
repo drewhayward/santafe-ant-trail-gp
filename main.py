@@ -1,10 +1,29 @@
 from collections import deque
+import matplotlib.pyplot as plt
+import tqdm
+import wandb
+
 from state import *
 from ops import *
 
+
+param_defaults = {
+    "max_tree_depth":5,
+    "max_generations":50,
+    "pop_size" : 500,
+    "elitism_k" : 7,
+    "tournament_k" : 7,
+    "mutation_prob" : 0.4 
+}
+
+wandb.init(project="evocomp-hw4", config=param_defaults, entity="drewhayward")
+
+config = wandb.config
+
+MAX_FITNESS = 89
 OPT = """(IF_SENSE MOVE (PROG2 LEFT (IF_SENSE MOVE (PROG2 LEFT (IF_SENSE MOVE (PROG2 LEFT (IF_SENSE MOVE (PROG2 LEFT MOVE))))))))"""
 
-def run(program: Node, board: State, max_steps=500):
+def run(program: Node, board: State = State(), max_steps=500):
     # Repeatedly run program while we have steps
     while board.steps < max_steps:
 
@@ -37,6 +56,92 @@ def run(program: Node, board: State, max_steps=500):
 
     return board.collected
 
+
+def gp_search(
+    max_tree_depth=5,
+    max_generations=50,
+    pop_size = 500,
+    elitism_k = 7,
+    tournament_k = 7,
+    mutation_prob = 0.4
+):
+    # Create initial population
+    pop = [gen_random_program(max_tree_depth) for _ in range(pop_size)]
+    pop = [(p, run(p, State())) for p in pop]
+
+    gen = 0
+    pbar = tqdm.tqdm(total=max_generations)
+    while gen < max_generations:
+        # Top 5 elitism
+        new_pop = {Node(p.to_string()) for p, _ in pop[elitism_k:]}
+        # Build new population
+        while len(new_pop) < pop_size:
+            # Mix between reproduced individuals and 
+            # cross over individuals 
+            # with elitism
+            if random.random() < 0.5: # Mutation
+                ind = tournament_selection(pop, k=tournament_k)
+                if random.random() < mutation_prob:
+                    new_pop
+                else:
+                    new_pop.add(Node(ind.to_string()))
+            else: # crossover
+                ind1 = tournament_selection(pop, k=tournament_k)
+                ind2 = tournament_selection(pop, k=tournament_k)
+
+                new_pop.update(crossover_program(ind1, ind2))
+        pop = list(new_pop)
+
+        # Eval population fitness
+        pop = [(p, run(p, State())) for p in pop]
+        pop.sort(key=lambda x: x[1])
+
+        # Stats
+        wandb.log({
+            'best_fitness': pop[-1][1],
+            'worst_fitness': pop[0][1],
+            'avg_fitness': sum((p[1] for p in pop)) / len(pop),
+            'avg_depth': sum(p[0].max_depth() for p in pop) / len(pop),
+            'avg_nodes': sum(p[0].num_nodes() for p in pop) / len(pop)
+        })
+
+        # If best is max, break
+        if pop[-1][0] == MAX_FITNESS:
+            break
+
+        gen += 1
+        pbar.update()
+
+    pbar.close()
+
+
+    # # Graph generations
+    # plt.figure()
+
+    # # Fitness plot
+    # plt.subplot(2,1,1)
+    # x = list(range(max_generations))
+    # plt.plot(x, worst)
+    # plt.plot(x, avg)
+    # plt.plot(x, best)
+    # plt.legend(['Worst', 'Avg', 'Best'])
+    # plt.ylim(0, MAX_FITNESS)
+    # plt.xlabel('Generations')
+    # plt.ylabel('Fitness')
+
+    # # Tree stats
+    # plt.subplot(2,1,2)
+    # plt.plot(x, avg_nodes)
+    # plt.plot(x, avg_depth)
+    # plt.legend(['Avg #Nodes in Tree', 'Avg Tree Depth'])
+    # plt.xlabel('Generations')
+
+    # plt.savefig('fitness.png')
+
+    # # Return best program
+    # print(pop[-1][0].to_string())
+    with open('sln.txt', 'w') as f:
+        f.write(pop[-1][0].to_string())
+
 if __name__ == "__main__":
-    optimal = Node(OPT)
-    run(optimal, State())
+    gp_search(**config)

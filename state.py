@@ -144,6 +144,15 @@ class Node:
             self.cmd = None
             self.children = []
 
+    def num_nodes(self) -> int:
+        return 1 + sum((c.num_nodes() for c in self.children))
+
+    def max_depth(self) -> int:
+        if len(self.children) == 0:
+            return 0
+        else:
+            return 1 + max((c.max_depth() for c in self.children))
+            
     def __repr__(self) -> str:
         return f"Node(cmd='{self.cmd}', {len(self.children)} children)"
 
@@ -162,6 +171,24 @@ class Node:
         else:
             return '(' + self._to_string() + ')'
 
+    def __hash__(self) -> int:
+        return hash(self.to_string())
+
+    @staticmethod
+    def get_flat_nodes(node):
+        # DFS through program to build (parent, child_idx, depth, node) tuples
+
+        output = []
+        frontier = [(None, None, 0, node)]
+        while frontier:
+            state = frontier.pop()
+            output.append(state)
+
+            _, _, depth, node = state
+            for i, child in enumerate(node.children):
+                frontier.append((node, i, depth + 1, child))
+        
+        return output
 
 if __name__ == "__main__":
     b = State()
