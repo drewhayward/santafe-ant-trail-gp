@@ -13,8 +13,55 @@ def gen_random_program(max_depth, depth=0):
             return node
         else:
             return Node(cmd)
-            
+
+def mutate_program(prog, max_depth):
+    prog = Node(prog.to_string())
+    nodes = Node.get_flat_nodes(prog)
+
+    # Uniformly select node to mutate
+    parent, id, depth, node = random.choice(nodes)
+    if parent is None:
+        return gen_random_program(max_depth)
+    
+    parent.children[id] = gen_random_program(max_depth - depth)
+    return prog
+
+
+def crossover_program(prog1, prog2):
+    prog1 = Node(prog1.to_string())
+    prog1_nodes = Node.get_flat_nodes(prog1)
+    prog2 = Node(prog2.to_string())
+    prog2_nodes = Node.get_flat_nodes(prog2)
+
+    parent1, id1, _, node1 = random.choice(prog1_nodes)
+    parent2, id2, _, node2 = random.choice(prog2_nodes)
+    if parent1 is None:
+        prog1 = node2
+    else:
+        parent1.children[id1] = node2
+
+    if parent2 is None:
+        prog2 = node1
+    else:
+        parent2.children[id2] = node1
+
+    return prog1, prog2
+
+def tournament_selection(pop, k=5):
+    inds = random.sample(range(len(pop)), k)
+    best = max([pop[i] for i in inds], key=lambda x: x[1])[0]
+    return Node(best.to_string())
 
 if __name__ == "__main__":
     for _ in range(10):
-        print(gen_random_program(10).to_string())
+        a = gen_random_program(5)
+        b = gen_random_program(5)
+
+        c, d = crossover_program(a,b)
+
+        print('--')
+        print(a.to_string())
+        print(b.to_string())
+        print('Crossover')
+        print(c.to_string())
+        print(d.to_string())
