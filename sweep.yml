@@ -1,0 +1,36 @@
+name: test
+program: main.py
+method: grid
+metric:
+  name: best_fitness
+  goal: maximize
+command:
+  - ${env}
+  - /opt/anaconda3/bin/python3
+  - ${program}
+  - ${args}
+parameters:
+  mutation_prob:
+    values:
+      - 0.1
+      - 0.2
+      - 0.3
+      - 0.6
+      - 0.9
+  tournament_k:
+    values:
+      - 2
+      - 4
+      - 6
+      - 8
+  max_tree_depth:
+    values:
+      - 3
+      - 5
+      - 7
+      - 10 
+  pop_size:
+    values:
+      - 100
+      - 250
+      - 500

@@ -1,3 +1,4 @@
+import argparse
 from collections import deque
 import matplotlib.pyplot as plt
 import tqdm
@@ -9,12 +10,17 @@ from ops import *
 
 param_defaults = {
     "max_tree_depth":5,
-    "max_generations":50,
-    "pop_size" : 500,
-    "elitism_k" : 7,
-    "tournament_k" : 7,
-    "mutation_prob" : 0.4 
+    "max_generations":300,
+    "pop_size" : 300,
+    "elitism_k" : 5,
+    "tournament_k" : 15,
+    "mutation_prob" : 0.7
 }
+
+parser = argparse.ArgumentParser()
+args, unknown = parser.parse_known_args()
+
+param_defaults.update(vars(args))
 
 wandb.init(project="evocomp-hw4", config=param_defaults, entity="drewhayward")
 
@@ -142,6 +148,7 @@ def gp_search(
     # print(pop[-1][0].to_string())
     with open('sln.txt', 'w') as f:
         f.write(pop[-1][0].to_string())
+    wandb.save('sln.txt')
 
 if __name__ == "__main__":
     gp_search(**config)
