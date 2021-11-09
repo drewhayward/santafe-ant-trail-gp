@@ -88,14 +88,20 @@ def gp_search(
             if random.random() < 0.5: # Mutation
                 ind = tournament_selection(pop, k=tournament_k)
                 if random.random() < mutation_prob:
-                    new_pop
+                    new_pop.add(mutate_program(ind, max_depth=max_tree_depth))
                 else:
                     new_pop.add(Node(ind.to_string()))
             else: # crossover
                 ind1 = tournament_selection(pop, k=tournament_k)
                 ind2 = tournament_selection(pop, k=tournament_k)
 
-                new_pop.update(crossover_program(ind1, ind2))
+                c1, c2 = crossover_program(ind1, ind2)
+                if random.random() < mutation_prob:
+                    c1 = mutate_program(c1, max_depth=max_tree_depth)
+                if random.random() < mutation_prob:
+                    c2 = mutate_program(c2, max_depth=max_tree_depth)
+                
+                new_pop.update([c1, c2])
         pop = list(new_pop)
 
         # Eval population fitness
