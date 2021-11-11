@@ -26,8 +26,22 @@ def mutate_program(prog, max_depth):
     parent.children[id] = gen_random_program(max_depth - depth)
     return prog
 
+def mutate_pointwise(prog, mutation_rate=0.1):
+    prog = Node(prog.to_string())
+    nodes = Node.get_flat_nodes(prog)
 
-def crossover_program(prog1, prog2):
+    for parent, id, depth, node in nodes:
+        if random.random() > mutation_rate:
+            continue
+
+        if node.cmd in {'MOVE', 'LEFT', 'RIGHT'}:
+            node.cmd = random.choice(['MOVE', 'LEFT', 'RIGHT'])
+        elif node.cmd in {'PROG2', 'IF_SENSE'}:
+            node.cmd = random.choice(['PROG2', 'IF_SENSE'])
+
+    return prog
+
+def crossover_program(prog1, prog2, max_depth=None):
     prog1 = Node(prog1.to_string())
     prog1_nodes = Node.get_flat_nodes(prog1)
     prog2 = Node(prog2.to_string())
@@ -44,6 +58,10 @@ def crossover_program(prog1, prog2):
         prog2 = node1
     else:
         parent2.children[id2] = node1
+
+    if max_depth is not None:
+        prog1.truncate_depth(max_depth)
+        prog2.truncate_depth(max_depth)
 
     return prog1, prog2
 

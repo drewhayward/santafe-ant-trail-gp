@@ -1,3 +1,6 @@
+import random
+
+
 _sf_init = """.###............................
 ...#............................
 ...#.....................###....
@@ -143,6 +146,16 @@ class Node:
         else:
             self.cmd = None
             self.children = []
+    
+    def truncate_depth(self, max_depth, _depth=0):
+        if _depth >= max_depth:
+            # Truncate
+            if self.cmd not in {'LEFT', 'RIGHT', 'MOVE'}:
+                self.cmd = ['LEFT', 'RIGHT','MOVE'][random.randint(0,2)]
+                self.children = []
+        else:
+            for child in self.children:
+                child.truncate_depth(max_depth, _depth+1)
 
     def num_nodes(self) -> int:
         return 1 + sum((c.num_nodes() for c in self.children))

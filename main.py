@@ -9,8 +9,8 @@ from ops import *
 
 
 param_defaults = {
-    "max_tree_depth":5,
-    "max_generations":300,
+    "max_tree_depth":10,
+    "max_generations":500,
     "pop_size" : 300,
     "elitism_k" : 5,
     "tournament_k" : 15,
@@ -95,7 +95,7 @@ def gp_search(
                 ind1 = tournament_selection(pop, k=tournament_k)
                 ind2 = tournament_selection(pop, k=tournament_k)
 
-                c1, c2 = crossover_program(ind1, ind2)
+                c1, c2 = crossover_program(ind1, ind2, max_depth=max_tree_depth)
                 if random.random() < mutation_prob:
                     c1 = mutate_program(c1, max_depth=max_tree_depth)
                 if random.random() < mutation_prob:
